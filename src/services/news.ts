@@ -101,7 +101,10 @@ async function fetchNewsApi(
 ): Promise<NewsArticle[]> {
   const key = import.meta.env.VITE_NEWS_API_KEY
   const country = import.meta.env.VITE_NEWS_API_COUNTRY ?? 'us'
-  const url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=${count}&apiKey=${key}`
+  // NewsAPI's free tier under-returns articles (e.g. asks 5, returns 4), so we
+  // over-fetch and slice down to guarantee `count` stories when available.
+  const pageSize = Math.min(count * 2 + 2, 100)
+  const url = `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=${pageSize}&apiKey=${key}`
   const data = await fetchJson<{ articles: NewsApiArticle[] }>(url, signal)
   return data.articles.slice(0, count).map((a, i) => ({
     id: a.url || String(i),
